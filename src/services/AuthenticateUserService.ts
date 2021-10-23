@@ -1,4 +1,5 @@
 import axios from 'axios';
+import prismaClient from '../prisma';
 
 /**
  * Receber code(string)
@@ -39,7 +40,27 @@ class AuthenticateUserService {
       headers: {
         authorization: `Bearer ${ accessTokenResponse.access_token }`
       }
-    })
+    });
+
+    const { login, id, name, avatar_url} = response.data;
+
+    let user = await prismaClient.user.findFirst({ 
+      where: {
+        github_id: id
+      }
+    });
+
+    if(!user) {
+      await prismaClient.user.create({
+        data: {
+          github_id: id,
+          login,
+          avatar_url,
+          name
+        }
+      });
+    };
+
 
     return response.data;
   }
