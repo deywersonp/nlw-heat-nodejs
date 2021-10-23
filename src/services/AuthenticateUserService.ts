@@ -1,5 +1,6 @@
 import axios from 'axios';
 import prismaClient from '../prisma';
+import { sign } from 'jsonwebtoken';
 
 /**
  * Receber code(string)
@@ -42,7 +43,7 @@ class AuthenticateUserService {
       }
     });
 
-    const { login, id, name, avatar_url} = response.data;
+    const { login, id, avatar_url, name} = response.data;
 
     let user = await prismaClient.user.findFirst({ 
       where: {
@@ -61,8 +62,22 @@ class AuthenticateUserService {
       });
     };
 
+    const token = sign(
+      {
+        user: {
+          name: user.name,
+          avatar_ur: user.avatar_url,
+          id: user.id
+        }
+      },
+      process.env.JWT_SECRET,
+      {
+        subject: user.id,
+        expiresIn: "1d"
+      }
+    )
 
-    return response.data;
+    return { token, user };
   }
 };
 
